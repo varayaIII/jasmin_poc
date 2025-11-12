@@ -1,0 +1,33 @@
+---
+# ================================================================
+# Rol: keepalived
+# Configura failover automático Jasmin entre NodoA y NodoB
+# ================================================================
+
+- name: Instalar keepalived
+  apt:
+    name: keepalived
+    state: present
+    update_cache: yes
+
+- name: Crear script de chequeo para jasmind
+  copy:
+    dest: /usr/local/bin/check_jasmind.sh
+    mode: '0755'
+    content: |
+      #!/bin/bash
+      systemctl is-active --quiet jasmind
+
+- name: Deploy keepalived.conf
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Asegurar que keepalived esté habilitado y activo
+  systemd:
+    name: keepalived
+    enabled: yes
+    state: restarted

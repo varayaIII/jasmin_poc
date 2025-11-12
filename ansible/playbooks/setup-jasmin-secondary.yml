@@ -1,0 +1,22 @@
+---
+- name: Setup Jasmin SMS Gateway Secondary Node
+  hosts: jasmin_secondary
+  become: yes
+  roles:
+    - jasmin-secondary
+
+  tasks:
+    - name: Mostrar resumen de instalación del nodo secundario
+      debug:
+        msg:
+          - "==================================================="
+          - "Jasmin Secondary instalado correctamente"
+          - "==================================================="
+          - "HTTP API: http://{{ ansible_host }}:1401"
+          - "Telnet CLI: telnet {{ ansible_host }} 8990"
+          - "SMPP Server: {{ ansible_host }}:2775"
+          - "==================================================="
+          - "Credenciales:"
+          - "  Usuario CLI: jcliadmin"
+          - "  Password: JasminAdmin2024!"
+          - "==================================================="

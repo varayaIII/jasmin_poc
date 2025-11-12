@@ -1,0 +1,37 @@
+# Redis configuration for Jasmin SMS Gateway
+bind {{ redis_bind_address }}
+port {{ redis_port }}
+protected-mode yes
+requirepass {{ redis_password }}
+
+# Persistence
+{% if redis_save_enabled %}
+{% for interval in redis_save_intervals %}
+save {{ interval }}
+{% endfor %}
+{% else %}
+save ""
+{% endif %}
+
+# Memory management
+maxmemory {{ redis_maxmemory }}
+maxmemory-policy {{ redis_maxmemory_policy }}
+
+# Logging
+loglevel notice
+logfile /var/log/redis/redis-server.log
+
+# General
+daemonize yes
+supervised systemd
+pidfile /var/run/redis/redis-server.pid
+dir /var/lib/redis
+
+# Performance
+tcp-backlog 511
+timeout 0
+tcp-keepalive 300
+
+# Append only file
+appendonly no
+appendfsync everysec

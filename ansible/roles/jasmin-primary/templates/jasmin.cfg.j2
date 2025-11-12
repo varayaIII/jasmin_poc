@@ -1,0 +1,41 @@
+[jcli]
+bind = {{ jasmin_telnet_host }}
+port = {{ jasmin_telnet_port }}
+username = {{ jasmin_admin_username }}
+password = {{ jasmin_admin_password }}
+
+[http-api]
+bind = {{ jasmin_http_host }}
+port = {{ jasmin_http_port }}
+
+[smpp-server]
+bind = {{ jasmin_smpp_host }}
+port = {{ jasmin_smpp_port }}
+
+[redis-client]
+host = {{ jasmin_redis_host }}
+port = {{ jasmin_redis_port }}
+password = {{ jasmin_redis_password }}
+poolsize = 10
+
+[amqp-broker]
+host = 127.0.0.1
+port = 5672
+username = jasmin
+password = jasmin
+vhost = /
+
+[test]
+log_path = {{ jasmin_home }}/logs/test.log
+
+[router-pb]
+log_level = INFO
+log_file = {{ jasmin_home }}/logs/router.log
+
+[dlr-thrower]
+log_level = INFO
+log_file = {{ jasmin_home }}/logs/dlr-thrower.log
+
+[dlrlookup-thrower]
+log_level = INFO
+log_file = {{ jasmin_home }}/logs/dlrlookup.log

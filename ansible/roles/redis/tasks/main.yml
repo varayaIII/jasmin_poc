@@ -1,0 +1,100 @@
+---
+- name: Install Redis server
+  apt:
+    name:
+      - redis-server
+      - redis-tools
+      - python3-redis
+    state: present
+    update_cache: yes
+  tags: redis
+
+- name: Ensure Redis service is stopped before configuration
+  systemd:
+    name: "{{ redis_service }}"
+    state: stopped
+  tags: redis
+
+- name: Backup original Redis configuration
+  copy:
+    src: "{{ redis_config_file }}"
+    dest: "{{ redis_config_file }}.backup"
+    remote_src: yes
+    force: no
+  tags: redis
+
+- name: Deploy Redis configuration
+  template:
+    src: redis.conf.j2
+    dest: "{{ redis_config_file }}"
+    owner: redis
+    group: redis
+    mode: '0640'
+    backup: yes
+  notify: restart redis
+  tags: redis
+
+- name: Ensure Redis directories exist with correct permissions
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: redis
+    group: redis
+    mode: '0755'
+  loop:
+    - /var/lib/redis
+    - /var/log/redis
+    - /var/run/redis
+  tags: redis
+
+- name: Ensure Redis service is started and enabled
+  systemd:
+    name: "{{ redis_service }}"
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  tags: redis
+
+- name: Wait for Redis to be ready
+  wait_for:
+    host: "{{ redis_bind_address }}"
+    port: "{{ redis_port }}"
+    delay: 2
+    timeout: 30
+  tags: redis
+
+- name: Test Redis connection with password
+  command: redis-cli -h {{ redis_bind_address }} -p {{ redis_port }} -a {{ redis_password }} PING
+  register: redis_ping
+  changed_when: false
+  failed_when: redis_ping.stdout != "PONG"
+  tags: redis
+
+- name: Allow Redis through firewall
+  ufw:
+    rule: allow
+    port: "{{ redis_port }}"
+    proto: tcp
+  when: ansible_facts['distribution'] == 'Ubuntu'
+  tags: redis
+
+- name: Set Redis kernel parameters for better performance
+  sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+  loop:
+    - { key: 'vm.overcommit_memory', value: '1' }
+    - { key: 'net.core.somaxconn', value: '65535' }
+  tags: redis
+
+- name: Disable Transparent Huge Pages (THP) for Redis
+  copy:
+    content: |
+      #!/bin/bash
+      echo never > /sys/kernel/mm/transparent_hugepage/enabled
+      echo never > /sys/kernel/mm/transparent_hugepage/defrag
+    dest: /etc/rc.local
+    mode: '0755'
+  tags: redis

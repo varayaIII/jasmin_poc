@@ -1,0 +1,37 @@
+---
+# Jasmin installation
+jasmin_version: "0.11.1"  # Versión más reciente disponible en PyPI
+jasmin_user: jasmin
+jasmin_group: jasmin
+jasmin_home: /opt/jasmin
+
+# Database configuration
+jasmin_db_host: "12.4.8.182"
+jasmin_db_port: 3306
+jasmin_db_name: "jasmin"
+jasmin_db_user: "jasmin_user"
+jasmin_db_password: "JasminPass2024!"
+
+# Redis configuration
+jasmin_redis_host: "12.4.8.182"
+jasmin_redis_port: 6379
+jasmin_redis_password: "RedisJasmin2024!"
+
+# SMPP Server configuration
+jasmin_smpp_host: "0.0.0.0"
+jasmin_smpp_port: 2775
+
+# HTTP API configuration
+jasmin_http_host: "0.0.0.0"
+jasmin_http_port: 1401
+
+# Management console
+jasmin_telnet_host: "0.0.0.0"
+jasmin_telnet_port: 8990
+
+# Admin credentials
+jasmin_admin_username: "jcliadmin"
+jasmin_admin_password: "JasminAdmin2024!"
+
+# Node role
+jasmin_node_role: "primary"

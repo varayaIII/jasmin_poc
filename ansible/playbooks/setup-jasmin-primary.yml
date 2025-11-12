@@ -1,0 +1,22 @@
+---
+- name: Setup Jasmin SMS Gateway Primary Node
+  hosts: jasmin_primary
+  become: yes
+  roles:
+    - jasmin-primary
+  
+  post_tasks:
+    - name: Display Jasmin Primary Node info
+      debug:
+        msg:
+          - "==================================================="
+          - "Jasmin Primary instalado exitosamente"
+          - "==================================================="
+          - "HTTP API: http://{{ ansible_host }}:{{ jasmin_http_port }}"
+          - "Telnet CLI: telnet {{ ansible_host }} {{ jasmin_telnet_port }}"
+          - "SMPP Server: {{ ansible_host }}:{{ jasmin_smpp_port }}"
+          - "==================================================="
+          - "Credenciales Admin:"
+          - "  Usuario: {{ jasmin_admin_username }}"
+          - "  Password: {{ jasmin_admin_password }}"
+          - "==================================================="

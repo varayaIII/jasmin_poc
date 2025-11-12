@@ -1,0 +1,20 @@
+---
+# MySQL configuration defaults
+mysql_root_password: "JasminRoot2024!"
+mysql_jasmin_db: "jasmin"
+mysql_jasmin_user: "jasmin_user"
+mysql_jasmin_password: "JasminPass2024!"
+
+# Allowed hosts for jasmin user
+mysql_allowed_hosts:
+  - "12.4.8.180"  # JasminNodoA
+  - "12.4.8.181"  # JasminNodoB
+  - "localhost"
+
+# MySQL service name
+mysql_service: mysql
+
+# MySQL configuration
+mysql_bind_address: "0.0.0.0"
+mysql_max_connections: 200
+mysql_innodb_buffer_pool_size: "256M"

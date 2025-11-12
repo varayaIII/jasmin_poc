@@ -1,0 +1,13 @@
+---
+- name: restart jasmin
+  command: supervisorctl restart jasmin:*
+
+- name: restart rabbitmq
+  systemd:
+    name: rabbitmq-server
+    state: restarted
+
+- name: restart supervisor
+  systemd:
+    name: supervisor
+    state: restarted

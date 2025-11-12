@@ -1,0 +1,113 @@
+---
+- name: Install MySQL server and client
+  apt:
+    name:
+      - mysql-server
+      - mysql-client
+      - python3-pymysql
+    state: present
+    update_cache: yes
+  tags: mysql
+
+- name: Ensure MySQL service is started and enabled
+  systemd:
+    name: "{{ mysql_service }}"
+    state: started
+    enabled: yes
+  tags: mysql
+
+- name: Set MySQL root password
+  mysql_user:
+    name: root
+    password: "{{ mysql_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    state: present
+  tags: mysql
+
+- name: Create .my.cnf file for root user
+  template:
+    src: root-my.cnf.j2
+    dest: /root/.my.cnf
+    owner: root
+    group: root
+    mode: '0600'
+  tags: mysql
+
+- name: Remove anonymous MySQL users
+  mysql_user:
+    name: ''
+    host_all: yes
+    state: absent
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+  tags: mysql
+
+- name: Remove MySQL test database
+  mysql_db:
+    name: test
+    state: absent
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+  tags: mysql
+
+- name: Configure MySQL to listen on all interfaces
+  lineinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: '^bind-address'
+    line: "bind-address = {{ mysql_bind_address }}"
+    backup: yes
+  notify: restart mysql
+  tags: mysql
+
+- name: Configure MySQL max connections
+  lineinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: '^max_connections'
+    line: "max_connections = {{ mysql_max_connections }}"
+    insertafter: '^\[mysqld\]'
+  notify: restart mysql
+  tags: mysql
+
+- name: Configure InnoDB buffer pool size
+  lineinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: '^innodb_buffer_pool_size'
+    line: "innodb_buffer_pool_size = {{ mysql_innodb_buffer_pool_size }}"
+    insertafter: '^\[mysqld\]'
+  notify: restart mysql
+  tags: mysql
+
+- name: Create Jasmin database
+  mysql_db:
+    name: "{{ mysql_jasmin_db }}"
+    state: present
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    encoding: utf8mb4
+    collation: utf8mb4_unicode_ci
+  tags: mysql
+
+- name: Create Jasmin MySQL user with access from allowed hosts
+  mysql_user:
+    name: "{{ mysql_jasmin_user }}"
+    password: "{{ mysql_jasmin_password }}"
+    priv: "{{ mysql_jasmin_db }}.*:ALL"
+    host: "{{ item }}"
+    state: present
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+  loop: "{{ mysql_allowed_hosts }}"
+  tags: mysql
+
+- name: Flush privileges
+  command: mysql -u root -p{{ mysql_root_password }} -e "FLUSH PRIVILEGES;"
+  changed_when: false
+  tags: mysql
+
+- name: Allow MySQL through firewall
+  ufw:
+    rule: allow
+    port: '3306'
+    proto: tcp
+  when: ansible_facts['distribution'] == 'Ubuntu'
+  tags: mysql
