@@ -1,0 +1,98 @@
+---
+- name: Configurar alta disponibilidad con Keepalived para Jasmin
+  hosts: jasmin_nodes
+  become: yes
+  vars:
+    vip_address: "12.4.8.190"
+    interface_name: "{{ ansible_default_ipv4.interface }}"
+    priority_map:
+      JasminNodoA: 150
+      JasminNodoB: 100
+  tasks:
+
+    - name: Instalar keepalived si no está presente
+      apt:
+        name: keepalived
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Crear directorio de configuración
+      file:
+        path: /etc/keepalived
+        state: directory
+        mode: "0755"
+
+    - name: Configurar keepalived.conf
+      copy:
+        dest: /etc/keepalived/keepalived.conf
+        mode: "0644"
+        content: |
+          vrrp_instance VI_1 {
+              state MASTER
+              interface {{ interface_name }}
+              virtual_router_id 51
+              priority {{ priority_map[inventory_hostname] | default(100) }}
+              advert_int 1
+              authentication {
+                  auth_type PASS
+                  auth_pass JasminHA2025
+              }
+              virtual_ipaddress {
+                  {{ vip_address }}/24
+              }
+              notify /etc/keepalived/keepalived_notify.sh
+          }
+
+    - name: Crear script de notificación para failover
+      copy:
+        dest: /etc/keepalived/keepalived_notify.sh
+        mode: "0755"
+        content: |
+          #!/bin/bash
+          TYPE=$1
+          NAME=$2
+          STATE=$3
+
+          case $STATE in
+              MASTER)
+                  echo "[Keepalived] Nodo MASTER: iniciando Jasmin" | systemd-cat -t keepalived
+                  systemctl start jasmind
+                  ;;
+              BACKUP)
+                  echo "[Keepalived] Nodo BACKUP: deteniendo Jasmin" | systemd-cat -t keepalived
+                  systemctl stop jasmind
+                  ;;
+              FAULT)
+                  echo "[Keepalived] Nodo FAULT: deteniendo Jasmin" | systemd-cat -t keepalived
+                  systemctl stop jasmind
+                  ;;
+          esac
+
+    - name: Habilitar y reiniciar keepalived
+      systemd:
+        name: keepalived
+        enabled: yes
+        state: restarted
+
+    - name: Esperar 5 segundos para estabilización
+      wait_for:
+        timeout: 5
+
+    - name: Mostrar estado del servicio
+      shell: systemctl is-active keepalived
+      register: keepalived_status
+      changed_when: false
+
+    - name: Mostrar interfaz y VIP
+      shell: "ip a | grep {{ vip_address }}"
+      register: vip_check
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Resumen
+      debug:
+        msg:
+          - "Nodo: {{ inventory_hostname }}"
+          - "Keepalived: {{ keepalived_status.stdout }}"
+          - "VIP activo: {{ 'sí' if vip_check.rc == 0 else 'no' }}"
+          - "Interfaz usada: {{ interface_name }}"

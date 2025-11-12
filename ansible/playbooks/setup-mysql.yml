@@ -1,0 +1,20 @@
+---
+- name: Setup MySQL Database for Jasmin
+  hosts: jasmin_broker
+  become: yes
+  roles:
+    - mysql
+  
+  post_tasks:
+    - name: Display MySQL connection info
+      debug:
+        msg:
+          - "==================================================="
+          - "MySQL instalado exitosamente en {{ inventory_hostname }}"
+          - "Base de datos: {{ mysql_jasmin_db }}"
+          - "Usuario: {{ mysql_jasmin_user }}"
+          - "Hosts permitidos: {{ mysql_allowed_hosts | join(', ') }}"
+          - "==================================================="
+          - "Puedes conectarte desde los nodos con:"
+          - "mysql -h 12.4.8.182 -u {{ mysql_jasmin_user }} -p{{ mysql_jasmin_password }} {{ mysql_jasmin_db }}"
+          - "==================================================="

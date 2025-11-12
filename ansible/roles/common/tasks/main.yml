@@ -1,0 +1,44 @@
+---
+# Rol común: prepara todos los nodos Jasmin
+- name: Actualizar paquetes del sistema
+  ansible.builtin.apt:
+    update_cache: yes
+    upgrade: dist
+  when: ansible_os_family == "Debian"
+
+- name: Instalar utilidades básicas
+  ansible.builtin.package:
+    name:
+      - vim
+      - curl
+      - wget
+      - net-tools
+      - htop
+      - lsof
+      - chrony
+      - fail2ban
+    state: present
+
+- name: Configurar zona horaria
+  ansible.builtin.command: timedatectl set-timezone America/Santiago
+  changed_when: false
+
+- name: Habilitar y arrancar servicio NTP (chrony)
+  ansible.builtin.service:
+    name: chronyd
+    state: started
+    enabled: yes
+  when: ansible_os_family == "RedHat"
+
+- name: Habilitar y arrancar servicio NTP (Debian/Ubuntu)
+  ansible.builtin.service:
+    name: chrony
+    state: started
+    enabled: yes
+  when: ansible_os_family == "Debian"
+
+- name: Asegurar Fail2Ban habilitado
+  ansible.builtin.service:
+    name: fail2ban
+    state: started
+    enabled: yes

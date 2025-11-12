@@ -1,0 +1,30 @@
+[jasmin]
+log_level = INFO
+log_file = /var/log/jasmin/jasmin.log
+store_path = /opt/jasmin/storeB
+
+[amqp-broker]
+host = 12.4.8.182
+port = 5672
+vhost = /jasmin
+username = jasmin
+password = jasminpass
+ssl = no
+
+[redis-client]
+host = 12.4.8.182
+port = 6379
+password = RedisJasmin2024!
+db = 1
+
+[http-api]
+port = 1401
+authentication = True
+
+[jcli]
+port = 8990
+username = jcliadmin
+password = JasminAdmin2024!
+
+[smpp-server]
+port = 2775

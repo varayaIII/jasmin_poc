@@ -1,0 +1,6 @@
+---
+- name: Configuración base en todos los nodos Jasmin
+  hosts: all
+  become: yes
+  roles:
+    - { role: ../roles/common }

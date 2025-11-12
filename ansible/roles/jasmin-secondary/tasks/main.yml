@@ -1,0 +1,36 @@
+---
+# ================================================================
+# Rol: jasmin-secondary
+# Configura un nodo Jasmin secundario (standalone o HA)
+# ================================================================
+
+- name: Instalar y configurar Jasmin (modo secundario)
+  import_role:
+    name: jasmin-primary
+  vars:
+    jasmin_role_mode: "secondary"
+
+# Copiar configuración específica del nodo secundario
+- name: Deploy Jasmin secondary configuration
+  template:
+    src: jasmin.cfg.j2
+    dest: /etc/jasmin/jasmin.cfg
+    owner: root
+    group: root
+    mode: '0644'
+
+# Asegurar directorio de almacenamiento independiente
+- name: Ensure storeB directory exists
+  file:
+    path: /opt/jasmin/storeB
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+# Reiniciar el servicio Jasmin
+- name: Restart Jasmin daemon
+  systemd:
+    name: jasmind
+    state: restarted
+    enabled: yes

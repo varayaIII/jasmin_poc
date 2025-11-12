@@ -1,0 +1,18 @@
+---
+# Redis configuration defaults
+redis_port: 6379
+redis_bind_address: "0.0.0.0"
+redis_maxmemory: "256mb"
+redis_maxmemory_policy: "allkeys-lru"
+redis_password: "RedisJasmin2024!"
+
+# Redis persistence
+redis_save_enabled: yes
+redis_save_intervals:
+  - "900 1"    # Save after 900 sec if at least 1 key changed
+  - "300 10"   # Save after 300 sec if at least 10 keys changed
+  - "60 10000" # Save after 60 sec if at least 10000 keys changed
+
+# Redis service
+redis_service: redis-server
+redis_config_file: /etc/redis/redis.conf

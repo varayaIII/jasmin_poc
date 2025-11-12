@@ -1,0 +1,192 @@
+---
+- name: Install Jasmin dependencies
+  apt:
+    name:
+      - python3
+      - python3-pip
+      - python3-dev
+      - python3-venv
+      - build-essential
+      - libssl-dev
+      - libffi-dev
+      - rabbitmq-server
+      - supervisor
+      - git
+    state: present
+    update_cache: yes
+  tags: jasmin
+
+- name: Create Jasmin group
+  group:
+    name: "{{ jasmin_group }}"
+    system: yes
+  tags: jasmin
+
+- name: Create Jasmin user
+  user:
+    name: "{{ jasmin_user }}"
+    group: "{{ jasmin_group }}"
+    system: yes
+    home: "{{ jasmin_home }}"
+    shell: /bin/bash
+    create_home: yes
+  tags: jasmin
+
+- name: Create Jasmin directory structure
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ jasmin_user }}"
+    group: "{{ jasmin_group }}"
+    mode: '0755'
+  loop:
+    - "{{ jasmin_home }}"
+    - "{{ jasmin_home }}/config"
+    - "{{ jasmin_home }}/logs"
+    - "{{ jasmin_home }}/store"
+    - /var/log/jasmin
+  tags: jasmin
+
+- name: Create Python virtual environment
+  command: python3 -m venv {{ jasmin_home }}/venv
+  args:
+    creates: "{{ jasmin_home }}/venv"
+  tags: jasmin
+
+- name: Change ownership of Jasmin home
+  file:
+    path: "{{ jasmin_home }}"
+    owner: "{{ jasmin_user }}"
+    group: "{{ jasmin_group }}"
+    recurse: yes
+  tags: jasmin
+
+- name: Upgrade pip, setuptools and wheel
+  pip:
+    name:
+      - pip
+      - setuptools
+      - wheel
+    state: latest
+    virtualenv: "{{ jasmin_home }}/venv"
+  tags: jasmin
+
+- name: Install Jasmin SMS Gateway version {{ jasmin_version }}
+  pip:
+    name: "jasmin=={{ jasmin_version }}"
+    virtualenv: "{{ jasmin_home }}/venv"
+  tags: jasmin
+
+- name: Install additional Python dependencies
+  pip:
+    name:
+      - redis
+      - pymysql
+      - cryptography
+    virtualenv: "{{ jasmin_home }}/venv"
+  tags: jasmin
+
+- name: Deploy Jasmin configuration
+  template:
+    src: jasmin.cfg.j2
+    dest: "{{ jasmin_home }}/config/jasmin.cfg"
+    owner: "{{ jasmin_user }}"
+    group: "{{ jasmin_group }}"
+    mode: '0644'
+  notify: restart jasmin
+  tags: jasmin
+
+- name: Deploy RabbitMQ configuration for Jasmin
+  copy:
+    content: |
+      [
+        {rabbit, [
+          {loopback_users, []}
+        ]}
+      ].
+    dest: /etc/rabbitmq/rabbitmq.config
+    owner: rabbitmq
+    group: rabbitmq
+    mode: '0644'
+  notify: restart rabbitmq
+  tags: jasmin
+
+- name: Ensure RabbitMQ is started and enabled
+  systemd:
+    name: rabbitmq-server
+    state: started
+    enabled: yes
+  tags: jasmin
+
+- name: Wait for RabbitMQ to start
+  wait_for:
+    port: 5672
+    delay: 3
+    timeout: 30
+  tags: jasmin
+
+- name: Create RabbitMQ user for Jasmin
+  command: rabbitmqctl add_user jasmin jasmin
+  register: rabbitmq_user_result
+  failed_when: 
+    - rabbitmq_user_result.rc != 0
+    - "'already exists' not in rabbitmq_user_result.stderr"
+  changed_when: rabbitmq_user_result.rc == 0
+  tags: jasmin
+
+- name: Set RabbitMQ permissions for Jasmin user
+  command: rabbitmqctl set_permissions -p / jasmin ".*" ".*" ".*"
+  tags: jasmin
+
+- name: Deploy Supervisor configuration for Jasmin services
+  template:
+    src: jasmin-supervisor.conf.j2
+    dest: /etc/supervisor/conf.d/jasmin.conf
+    mode: '0644'
+  notify: restart supervisor
+  tags: jasmin
+
+- name: Ensure Supervisor is started and enabled
+  systemd:
+    name: supervisor
+    state: started
+    enabled: yes
+  tags: jasmin
+
+- name: Reload Supervisor to pick up new config
+  command: supervisorctl reread
+  changed_when: false
+  tags: jasmin
+
+- name: Update Supervisor
+  command: supervisorctl update
+  changed_when: false
+  tags: jasmin
+
+- name: Start Jasmin services
+  command: supervisorctl start jasmin:*
+  changed_when: false
+  ignore_errors: yes
+  tags: jasmin
+
+- name: Allow Jasmin ports through firewall
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop:
+    - "{{ jasmin_smpp_port }}"
+    - "{{ jasmin_http_port }}"
+    - "{{ jasmin_telnet_port }}"
+  tags: jasmin
+
+- name: Wait for Jasmin services to start
+  wait_for:
+    port: "{{ item }}"
+    delay: 10
+    timeout: 90
+  loop:
+    - "{{ jasmin_http_port }}"
+    - "{{ jasmin_telnet_port }}"
+  ignore_errors: yes
+  tags: jasmin

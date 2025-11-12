@@ -1,0 +1,61 @@
+---
+- name: Actualizar script de failover Keepalived para Jasmin (modo lite)
+  hosts: jasmin_nodes
+  become: yes
+  tasks:
+
+    - name: Crear o actualizar script de notificación
+      copy:
+        dest: /etc/keepalived/keepalived_notify.sh
+        mode: "0755"
+        content: |
+          #!/bin/bash
+          TYPE=$1
+          NAME=$2
+          STATE=$3
+
+          case $STATE in
+              MASTER)
+                  echo "[Keepalived] Nodo MASTER: iniciando Jasmin" | systemd-cat -t keepalived
+                  systemctl start jasmind
+                  ;;
+              BACKUP)
+                  echo "[Keepalived] Nodo BACKUP: deteniendo Jasmin" | systemd-cat -t keepalived
+                  systemctl stop jasmind
+                  ;;
+              FAULT)
+                  echo "[Keepalived] Nodo FAULT: deteniendo Jasmin" | systemd-cat -t keepalived
+                  systemctl stop jasmind
+                  ;;
+          esac
+
+    - name: Asegurar permisos correctos
+      file:
+        path: /etc/keepalived/keepalived_notify.sh
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Insertar referencia al script si no existe
+      shell: |
+        grep -q 'notify /etc/keepalived/keepalived_notify.sh' /etc/keepalived/keepalived.conf \
+        || sed -i '/vrrp_instance VI_1/a \ \n  notify /etc/keepalived/keepalived_notify.sh' /etc/keepalived/keepalived.conf
+      args:
+        executable: /bin/bash
+
+    - name: Reiniciar Keepalived para aplicar cambios
+      systemd:
+        name: keepalived
+        state: restarted
+        enabled: yes
+
+    - name: Mostrar estado post-actualización
+      shell: "systemctl status keepalived --no-pager | grep Active"
+      register: status_out
+      changed_when: false
+
+    - debug:
+        msg:
+          - "Nodo: {{ inventory_hostname }}"
+          - "Estado actual: {{ status_out.stdout }}"
+          - "Script de failover actualizado exitosamente ✅"

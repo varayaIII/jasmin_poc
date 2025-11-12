@@ -1,0 +1,38 @@
+[program:jasmind]
+command={{ jasmin_home }}/venv/bin/jasmind.py --config {{ jasmin_home }}/config/jasmin.cfg
+directory={{ jasmin_home }}
+user={{ jasmin_user }}
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=/var/log/jasmin/jasmind.log
+
+[program:interceptord]
+command={{ jasmin_home }}/venv/bin/interceptord.py --config {{ jasmin_home }}/config/jasmin.cfg
+directory={{ jasmin_home }}
+user={{ jasmin_user }}
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=/var/log/jasmin/interceptord.log
+
+[program:dlrd]
+command={{ jasmin_home }}/venv/bin/dlrd.py --config {{ jasmin_home }}/config/jasmin.cfg
+directory={{ jasmin_home }}
+user={{ jasmin_user }}
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=/var/log/jasmin/dlrd.log
+
+[program:dlrlookupd]
+command={{ jasmin_home }}/venv/bin/dlrlookupd.py --config {{ jasmin_home }}/config/jasmin.cfg
+directory={{ jasmin_home }}
+user={{ jasmin_user }}
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=/var/log/jasmin/dlrlookupd.log
+
+[group:jasmin]
+programs=jasmind,interceptord,dlrd,dlrlookupd

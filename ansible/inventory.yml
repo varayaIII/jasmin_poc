@@ -1,0 +1,27 @@
+all:
+  children:
+    jasmin_nodes:
+      hosts:
+        JasminNodoA:
+          ansible_host: 12.4.8.180
+        JasminNodoB:
+          ansible_host: 12.4.8.181
+    
+    jasmin_broker:
+      hosts:
+        JasminBrockerDB:
+          ansible_host: 12.4.8.182
+    
+    jasmin_primary:
+      hosts:
+        JasminNodoA:
+          ansible_host: 12.4.8.180
+    
+    jasmin_secondary:
+      hosts:
+        JasminNodoB:
+          ansible_host: 12.4.8.181
+  
+  vars:
+    ansible_user: develop
+    ansible_ssh_private_key_file: ~/.ssh/id_rsa

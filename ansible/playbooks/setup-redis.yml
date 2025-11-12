@@ -1,0 +1,23 @@
+---
+- name: Setup Redis for Jasmin SMS Gateway
+  hosts: jasmin_broker
+  become: yes
+  roles:
+    - redis
+  
+  post_tasks:
+    - name: Display Redis connection info
+      debug:
+        msg:
+          - "==================================================="
+          - "Redis instalado exitosamente en {{ inventory_hostname }}"
+          - "Puerto: {{ redis_port }}"
+          - "Bind address: {{ redis_bind_address }}"
+          - "Password: {{ redis_password }}"
+          - "==================================================="
+          - "Puedes conectarte desde los nodos con:"
+          - "redis-cli -h 12.4.8.182 -p {{ redis_port }} -a {{ redis_password }}"
+          - "==================================================="
+          - "Prueba: redis-cli -h 12.4.8.182 -a {{ redis_password }} PING"
+          - "Debería responder: PONG"
+          - "==================================================="

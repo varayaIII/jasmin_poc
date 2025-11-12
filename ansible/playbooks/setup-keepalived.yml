@@ -1,0 +1,24 @@
+---
+- name: Configurar failover automático con keepalived
+  hosts: jasmin_nodes
+  become: yes
+  roles:
+    - keepalived
+
+  tasks:
+    - name: Mostrar estado de keepalived
+      shell: "systemctl is-active keepalived || echo 'Keepalived inactivo'"
+      register: keepalived_status
+
+    - name: Mostrar resumen
+      debug:
+        msg:
+          - "==================================================="
+          - "Keepalived instalado y configurado"
+          - "==================================================="
+          - "Modo: Failover automático"
+          - "VIP flotante: 12.4.8.190/24"
+          - "Nodo A (MASTER): 12.4.8.180"
+          - "Nodo B (BACKUP): 12.4.8.181"
+          - "Servicio jasmind se moverá automáticamente si el A falla"
+          - "==================================================="
