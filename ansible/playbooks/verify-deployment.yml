@@ -1,0 +1,35 @@
+---
+- name: Verify Jasmin HA Deployment
+  hosts: jasmin_cluster
+  gather_facts: true
+  become: true
+
+  tasks:
+    - name: Check Keepalived is running
+      service:
+        name: keepalived
+        state: started
+      check_mode: true
+
+    - name: Verify VIP is assigned
+      shell: ip addr show | grep {{ keepalived_vip }}
+      register: vip_check
+      changed_when: false
+      failed_when: false
+
+    - name: Check Jasmin processes
+      command: supervisorctl status
+      register: supervisor_status
+      changed_when: false
+
+    - name: Verify SMPP port
+      wait_for:
+        host: "{{ ansible_default_ipv4.address }}"
+        port: 2775
+        timeout: 10
+
+    - name: Display verification results
+      debug:
+        msg:
+          - "VIP Status: {{ 'ASSIGNED' if vip_check.rc == 0 else 'NOT ASSIGNED' }}"
+          - "Processes: {{ supervisor_status.stdout_lines | length }}"
