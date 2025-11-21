@@ -1,0 +1,16 @@
+---
+profile: production
+
+exclude_paths:
+  - .cache/
+  - .github/
+  - venv/
+
+skip_list:
+  - yaml[line-length]
+  - name[casing]
+  - fqcn[action-core]
+
+warn_list:
+  - experimental
+  - no-changed-when

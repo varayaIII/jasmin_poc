@@ -1,0 +1,20 @@
+---
+all:
+  vars:
+    ansible_user: root
+    ansible_python_interpreter: /usr/bin/python3
+    environment: staging
+    keepalived_vip: 192.168.1.200
+    keepalived_interface: eth0
+
+jasmin_cluster:
+  hosts:
+    jasmin-staging-1:
+      ansible_host: 192.168.1.201
+      keepalived_priority: 100
+      keepalived_state: MASTER
+      
+    jasmin-staging-2:
+      ansible_host: 192.168.1.202
+      keepalived_priority: 90
+      keepalived_state: BACKUP

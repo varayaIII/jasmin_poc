@@ -1,0 +1,32 @@
+# Ansible
+*.retry
+ansible/*.log
+.ansible/
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Secrets
+vault_pass.txt
+*_vault.yml
+*.pem
+*.key
+
+# Backups
+*.backup
+*.bak
+
+# CI/CD
+.github/workflows/*.retry
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
